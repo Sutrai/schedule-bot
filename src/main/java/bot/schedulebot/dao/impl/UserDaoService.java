@@ -33,11 +33,11 @@ public class UserDaoService extends JdbcDaoSupport implements UserDao {
     }
 
     public void insertNewUser(User user) {
-        log.info("Inserting new user: {}", user);
-        jdbcTemplate.update("INSERT INTO users(user_name, selected_file, telegram_id) VALUES (?, ?, ?) ON CONFLICT (telegram_id) DO NOTHING;",
+        jdbcTemplate.update("INSERT INTO users(user_name, selected_file, telegram_id) VALUES (?, ?, ?) ON CONFLICT (telegram_id) DO UPDATE SET user_name = EXCLUDED.user_name, selected_file = EXCLUDED.selected_file;",
                 user.getUsername(), user.getSelectedFile(), user.getTelegramId());
         log.info("User inserted: {}", user.getUsername());
     }
+
 
     public User findByUserId(long userId) {
         log.info("Finding user by telegram_id: {}", userId);
@@ -71,9 +71,6 @@ public class UserDaoService extends JdbcDaoSupport implements UserDao {
     }
 
     public int getCountUsers() {
-        log.info("Counting total number of users.");
-        int count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
-        log.info("Total number of users: {}", count);
-        return count;
+        return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
     }
 }

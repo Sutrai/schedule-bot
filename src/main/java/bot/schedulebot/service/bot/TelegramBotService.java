@@ -29,24 +29,23 @@ public class TelegramBotService {
         User user = getUser(userId);
 
         if (user.getGroupId() != null) {
+            log.info("User ID \"{}\" is requesting schedule for group ID \"{}\"", user.getTelegramId(), user.getGroupId());
             return updateUserGroupAndSendSchedule(user, user.getGroupId(), userId, messageId);
-
         } else {
+            log.warn("User ID \"{}\" has no group ID assigned. Prompting to select a group.", user.getTelegramId());
             return messageService.executeEditMessageText(ConstantsBot.FIRST_AND_SCHEDULE_TEXT, userId, messageId, KeyBoardUtils.choiceGroup());
         }
     }
 
-    public User getUser(long userId){
+    public User getUser(long userId) {
+        log.info("Retrieving user with ID: {}", userId);
         return userDao.findByUserId(userId);
-
     }
 
     public BotApiMethod<?> updateUserGroupAndSendSchedule(User user, int groupId, Long chatId, Long messageId) {
         log.info("Updating user ID \"{}\" with group ID \"{}\"", user.getTelegramId(), groupId);
-
         List<String> rasp = ParseFileService.parseExcel(user.getSelectedFile(), groupId);
         return messageService.executeEditMessageText(formatDataText(rasp), chatId, messageId, KeyBoardUtils.implementationOfMondayMarkup());
-
     }
 
     private String formatDate(LocalDate date) {
@@ -59,22 +58,21 @@ public class TelegramBotService {
     }
 
     public BotApiMethod<?> handleDaySchedule(int dayOffset, long userId, long messageId) {
-
         User user = getUser(userId);
-
         String dateData = ParseFileService.getTime(user.getSelectedFile());
 
         LocalDate startDate = parseStartDate(dateData);
         LocalDate targetDate = startDate.plusDays(dayOffset / 4);
 
         String formattedDate = formatDate(targetDate);
-        String formattedDateCapitalized = formattedDate.substring(0, 1).toUpperCase() + formatDate(targetDate).substring(1);
+        String formattedDateCapitalized = formattedDate.substring(0, 1).toUpperCase() + formattedDate.substring(1);
 
+        log.info("User ID \"{}\" is requesting schedule for the day: {}", user.getTelegramId(), formattedDateCapitalized);
         return sendScheduleForDay(user, dayOffset, userId, messageId, formattedDateCapitalized);
     }
 
     public BotApiMethod<?> sendScheduleForDay(User user, int dayOffset, Long chatId, Long messageId, String formattedDate) {
-
+        log.info("Sending schedule for user ID \"{}\" on date: {}", user.getTelegramId(), formattedDate);
         List<String> rasp = ParseFileService.parseExcel(user.getSelectedFile(), user.getGroupId());
         String scheduleText = formatScheduleText(dayOffset, rasp);
 
@@ -84,10 +82,9 @@ public class TelegramBotService {
 
     public String formatScheduleText(int startIndex, List<String> rasp) {
         StringBuilder schedule = new StringBuilder();
-        System.out.println(rasp.toString());
+        log.debug("Formatting schedule text from index: {}", startIndex);
 
         for (int i = 0; i < 4; i++) {
-
             String line = rasp.get(startIndex + i)
                     .replaceAll("\\s+[А-Я][а-я]+\\s+[А-Я]\\.[А-Я]\\.", "")
                     .trim()
@@ -100,10 +97,13 @@ public class TelegramBotService {
     private LocalDate parseStartDate(String dateData) {
         String dateString = dateData.split(" ")[1];
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        log.info("Parsing start date from data: {}", dateString);
         return LocalDate.parse(dateString, formatter);
     }
 
-    public long returnCountUsers(){
-        return userDao.getCountUsers();
+    public long returnCountUsers() {
+        long count = userDao.getCountUsers();
+        log.info("Total number of users: {}", count);
+        return count;
     }
 }

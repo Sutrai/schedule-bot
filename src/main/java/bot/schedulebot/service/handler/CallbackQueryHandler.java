@@ -28,7 +28,7 @@ public class CallbackQueryHandler {
         long userId = query.getFrom().getId();
         int messageId = query.getMessage().getMessageId();
 
-        log.info("Received callback query from userId: {}, messageId: {}", userId, messageId);
+        log.info("Received callback query from userId: {}, nickname: {}", userId, query.getFrom().getUserName());
 
         if (ConstantsBot.groupMap.containsKey(query.getData())) {
             return handleGroupSelection(query, userId, messageId);
